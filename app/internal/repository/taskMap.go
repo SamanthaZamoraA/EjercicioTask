@@ -142,3 +142,15 @@ func (t *TaskMap) Delete(id int) (err error) {
 	delete((*t).db, id)
 	return
 }
+
+// Funcion para obtener una tarea por id
+func (t *TaskMap) GetByID(id int) (task internal.Task, err error) {
+	// Validar que exista
+	task, ok := (*t).db[id]
+	if !ok {
+		err = internal.ErrTaskNotFound
+		return
+	}
+
+	return
+}

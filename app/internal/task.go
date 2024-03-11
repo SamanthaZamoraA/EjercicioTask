@@ -61,6 +61,11 @@ type TaskRepository interface {
 
 	//Eliminar una tarea
 	Delete(id int) (err error)
+
+	//Obtener todas las tareas
+
+	//Obtener por id
+	GetByID(id int) (task Task, err error)
 }
 
 // Interfaz de service
@@ -72,4 +77,6 @@ type TaskService interface {
 	UpdatePartial(id int, fields map[string]any) (err error)
 
 	Delete(id int) (err error)
+
+	GetByID(id int) (task Task, err error)
 }

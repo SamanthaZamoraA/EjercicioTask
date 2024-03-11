@@ -303,3 +303,44 @@ func (d *TaskHandler) DeleteTask() http.HandlerFunc {
 		response.Text(w, http.StatusNoContent, "Tarea eliminada con exito")
 	}
 }
+
+// --------------------- HANDLER DE GETBYID ---------------------
+func (d *TaskHandler) GetTaskByID() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// request
+		// Paso 1: Leer el id de la URL y convertirlo a entero
+		id, err := strconv.Atoi(chi.URLParam(r, "id"))
+		if err != nil {
+			response.Text(w, http.StatusBadRequest, "invalid id")
+			return
+		}
+
+		// process
+		// Paso 2: Obtener la tarea del mapa de tareas, usando el metodo GetByID del repositorio
+		task, err := d.sv.GetByID(id)
+		if err != nil {
+			switch {
+			case errors.Is(err, internal.ErrTaskNotFound):
+				response.Text(w, http.StatusNotFound, "task not found")
+			default:
+				response.Text(w, http.StatusInternalServerError, "internal server error")
+			}
+			return
+		}
+
+		// response
+		// Paso 3: Crear  una tarea en formatoJSON que se va a enviar como respuesta del handler
+		data := TaskResponse{
+			ID:          task.ID,
+			Tittle:      task.Tittle,
+			Description: task.Description,
+			Done:        task.Done,
+		}
+
+		// Paso 4: Enviar una respuesta HTTP exitosa (200 OK) junto con los datos de la tarea
+		response.ResponseJSON(w, http.StatusOK, map[string]any{
+			"message": "task found",
+			"data":    data,
+		})
+	}
+}

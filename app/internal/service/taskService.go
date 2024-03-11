@@ -42,3 +42,9 @@ func (t *TaskService) Delete(id int) (err error) {
 	err = t.repository.Delete(id)
 	return
 }
+
+// Funcion para implementar el metodo GetByID de la interfaz TaskService
+func (t *TaskService) GetByID(id int) (task internal.Task, err error) {
+	task, err = t.repository.GetByID(id)
+	return
+}
