@@ -2,15 +2,11 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 
-	"github.com/Taks/internal/handler"
-	"github.com/Taks/internal/repository"
-	"github.com/Taks/internal/service"
-	"github.com/go-chi/chi"
+	"github.com/Taks/internal/application"
 )
 
-func main() {
+/*func main() {
 
 	//Inicializar las dependencias
 
@@ -43,6 +39,19 @@ func main() {
 
 	//Iniciar el servidor
 	if err := http.ListenAndServe(":8080", router); err != nil {
+		fmt.Println(err)
+		return
+	}
+}*/
+
+func main() {
+	// application
+
+	// - config
+	app := application.NewDefault(":8080")
+
+	// - run
+	if err := app.Run(); err != nil {
 		fmt.Println(err)
 		return
 	}
