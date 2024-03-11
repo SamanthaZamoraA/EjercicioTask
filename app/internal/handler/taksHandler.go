@@ -1,20 +1,20 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/Taks/internal"
 	"github.com/Taks/internal/tools"
-	"github.com/Taks/pkg/request"
 	"github.com/Taks/pkg/response"
 )
 
-// Se crea una estructura de mapas para almacenar las tareas
+// Se llama a la interfaz de servicio
 type TaskHandler struct {
-	tasks  map[int]internal.Task
-	lastId int
+	sv internal.TaskService
 }
 
 // Se crea una estructura para almacenar las tareas en forma de requests
@@ -33,25 +33,10 @@ type TaskJSON struct {
 }
 
 // Funcion para inicializar el handler de tareas
-func NewTaskHandler(tasks map[int]internal.Task, lastId int) *TaskHandler {
-
-	//Setear valores por defecto
-	defaultTasks := make(map[int]internal.Task)
-	defaultLastId := 0
-
-	//Si es diferente de nil, setear los valores
-	if tasks != nil {
-		defaultTasks = tasks
-	}
-
-	if lastId != 0 {
-		defaultLastId = lastId
-	}
-
-	//Retornar los valores por default
+func NewTaskHandler(sv internal.TaskService) *TaskHandler {
+	//Se retorna el handler que contiene el servicio
 	return &TaskHandler{
-		defaultTasks,
-		defaultLastId,
+		sv: sv,
 	}
 }
 
@@ -73,61 +58,78 @@ func (t *TaskHandler) CreateTask() http.HandlerFunc {
 			}
 		*/
 
-		//Paso 0: Validar que todos los campos esten completos
-		bodyMap := make(map[string]interface{})
-		if err := request.RequestJSON(r, &bodyMap); err != nil {
-			response.ResponseJSON(w, http.StatusBadRequest, map[string]interface{}{
+		//Paso 0: Leer el body
+		bytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			response.ResponseJSON(w, http.StatusBadRequest, map[string]any{"message": "invalid request body"})
+			return
+		}
+
+		// Paso 1: Decodificar el body y crear un map[string]any
+		bodyMap := map[string]any{}
+		if err := json.Unmarshal(bytes, &bodyMap); err != nil {
+			response.ResponseJSON(w, http.StatusBadRequest, map[string]any{
 				"message": "invalid request body",
 			})
 			return
 		}
 
+		//Pso 2: Validar que todos los campos esten completos
 		if err := tools.CheckFieldExistance(bodyMap, "tittle", "description", "done"); err != nil {
 			var fieldError *tools.FieldError
 			if errors.As(err, &fieldError) {
-				response.ResponseJSON(w, http.StatusBadRequest, map[string]interface{}{
+				response.ResponseJSON(w, http.StatusBadRequest, map[string]any{
 					"message": fmt.Sprintf("%s is required", fieldError.Field),
 				})
 				return
 			}
 
-			response.ResponseJSON(w, http.StatusInternalServerError, map[string]interface{}{
+			response.ResponseJSON(w, http.StatusInternalServerError, map[string]any{
 				"message": "internal server error",
 			})
 			return
 		}
 
-		// Paso 1: Crear una instancia de TaskRequest para almacenar los datos del cuerpo JSON
+		// Paso 3: Crear una instancia de TaskRequest para almacenar los datos del cuerpo JSON
 		var body TaskRequest
 
-		// Paso 2: Decodificar el JSON del cuerpo de la solicitud y asignarlo a la estructura TaskRequest
-		if err := request.RequestJSON(r, &body); err != nil {
+		// Paso 4: Decodificar el JSON del cuerpo de la solicitud y asignarlo a la estructura TaskRequest
+		if err := json.Unmarshal(bytes, &body); err != nil {
 
 			//Si ocurre un error decodificando el JSON, enviar una respuesta HTTP con error
 			response.ResponseJSON(w, http.StatusBadRequest, map[string]any{
-				"Message": "invalid request body",
+				"--Message": "invalid request body",
 			})
 			return
 		}
 
 		//process
-		// Paso 3: Incrementar el ID de la tarea
-		t.lastId++
-
-		// Paso 4: Crear una instancia de Task a partir de los datos recibidos
+		// Paso 5: Crear una instancia de Task a partir de los datos recibidos
 		task := internal.Task{
-			ID:          t.lastId,
 			Tittle:      body.Tittle,
 			Description: body.Description,
 			Done:        body.Done,
 		}
 
-		// Paso 5: Agregar la tarea al mapa de tareas
-		t.tasks[task.ID] = task
+		// Paso 6: Agregar la tarea al mapa de tareas, usando el metodo Save del repositorio
+		// Al Save se le pasa la tarea con los datos recibidos y en el repository se gestiona el guarda en el mapa y el id
+		if err := t.sv.Save(&task); err != nil {
+
+			// Se gestiona que tipo de error se produce y se envia la respuesta correspondiente
+			switch {
+			case errors.Is(err, internal.ErrTaskDuplicated):
+				response.ResponseJSON(w, http.StatusConflict, map[string]any{"message": "task already exists"})
+			case errors.Is(err, internal.ErrTaskInvalidField):
+				response.ResponseJSON(w, http.StatusBadRequest, map[string]any{"message": "invalid field"})
+			default:
+				response.ResponseJSON(w, http.StatusInternalServerError, map[string]any{"message": "internal server error"})
+				return
+			}
+		}
 
 		//response
 
-		// Paso 6: Crear  una tarea en formatoJSON
+		// Paso 7: Crear  una tarea en formatoJSON que se va a enviar como respuesta del handler
 		data := TaskJSON{
 			ID:          task.ID,
 			Tittle:      task.Tittle,
@@ -135,7 +137,7 @@ func (t *TaskHandler) CreateTask() http.HandlerFunc {
 			Done:        task.Done,
 		}
 
-		// Paso 7: Enviar una respuesta HTTP exitosa (201 Created) junto con los datos de la tarea creada
+		// Paso 8: Enviar una respuesta HTTP exitosa (201 Created) junto con los datos de la tarea creada
 		response.ResponseJSON(w, http.StatusCreated, map[string]any{
 			"message": "task created successfully",
 			"data":    data,

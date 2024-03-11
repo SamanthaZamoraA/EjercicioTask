@@ -38,17 +38,18 @@ Esta funcion es para escribir respuestas en formato JSON:
 */
 func ResponseJSON(w http.ResponseWriter, code int, body any) {
 
-	//Configura el encabezado Content-Type de la respuesta HTTP para indicar que la respuesta será JSON codificado en UTF-8.
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	//Establece el código de estado HTTP de la respuesta en el valor proporcionado por code
-	w.WriteHeader(code)
-
-	//Escribe el cuerpo de la respuesta JSON en la respuesta HTTP
+	//Primero se pregunta si ocurre un error codificando el JSON
 	if err := json.NewEncoder(w).Encode(body); err != nil {
 		//Si ocurre un error codificando el JSON, enviar una respuesta HTTP con error
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("internal server error"))
 	}
+
+	//Configura el encabezado Content-Type de la respuesta HTTP para indicar que la respuesta será JSON codificado en UTF-8.
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	//Establece el código de estado HTTP de la respuesta en el valor proporcionado por code
+	w.WriteHeader(code)
+
 }
