@@ -123,8 +123,8 @@ func (t *TaskHandler) CreateTask() http.HandlerFunc {
 				response.ResponseJSON(w, http.StatusBadRequest, map[string]any{"message": "invalid field"})
 			default:
 				response.ResponseJSON(w, http.StatusInternalServerError, map[string]any{"message": "internal server error"})
-				return
 			}
+			return
 		}
 
 		//response

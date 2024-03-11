@@ -34,6 +34,14 @@ func NewTaskMap(mapa map[int]internal.Task, lastId int) *TaskMap {
 // Funcion para inicializar el repositorio de tareas
 func (t *TaskMap) Save(task *internal.Task) (err error) {
 
+	//Se valida que la tarea no este duplicada
+	for _, value := range (*t).db {
+		if value.Tittle == (*task).Tittle {
+			err = internal.ErrTaskDuplicated
+			return
+		}
+	}
+
 	//Se incrementa el ultimo ID
 	(*t).lastId++
 
