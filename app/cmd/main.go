@@ -28,7 +28,17 @@ func main() {
 
 	//Registrar los endpoints
 	router.Route("/task", func(r chi.Router) {
+		//Método POST
 		r.Post("/post", h.CreateTask())
+
+		//Método PUT
+		r.Put("/put/{id}", h.UpdateTask())
+
+		//Método PATCH
+		r.Patch("/patch/{id}", h.UpdatePartialTask())
+
+		//Método DELETE
+		r.Delete("/delete/{id}", h.DeleteTask())
 	})
 
 	//Iniciar el servidor

@@ -52,9 +52,24 @@ type TaskRepository interface {
 
 	//Debe ser un puntero de Task porque se va a trabajar con el ultimo ID
 	Save(task *Task) (err error)
+
+	//Actualizar y sino esta devuelve error
+	Update(task Task) (err error)
+
+	//Actualizar parcialmente
+	UpdatePartial(id int, fields map[string]any) (err error)
+
+	//Eliminar una tarea
+	Delete(id int) (err error)
 }
 
 // Interfaz de service
 type TaskService interface {
 	Save(task *Task) (err error)
+
+	Update(task Task) (err error)
+
+	UpdatePartial(id int, fields map[string]any) (err error)
+
+	Delete(id int) (err error)
 }

@@ -24,3 +24,21 @@ func (t *TaskService) Save(task *internal.Task) (err error) {
 	err = t.repository.Save(task)
 	return
 }
+
+// Funcion para implementar el metodo Update de la interfaz TaskService
+func (t *TaskService) Update(task internal.Task) (err error) {
+	err = t.repository.Update(task)
+	return
+}
+
+// Funcion para implementar el metodo UpdatePartial de la interfaz TaskService
+func (t *TaskService) UpdatePartial(id int, fields map[string]any) (err error) {
+	err = t.repository.UpdatePartial(id, fields)
+	return
+}
+
+// Funcion para implementar el metodo Delete de la interfaz TaskService
+func (t *TaskService) Delete(id int) (err error) {
+	err = t.repository.Delete(id)
+	return
+}
